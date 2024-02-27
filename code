@@ -1,0 +1,76 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+
+const char* ssid = "YourWiFiSSID";
+const char* password = "YourWiFiPassword";
+
+// Define the pins connected to the parking sensors
+const int sensor1Pin = D1;
+const int sensor2Pin = D2;
+const int sensor3Pin = D3;
+const int sensor4Pin = D4;
+
+// Define the variables to store sensor readings
+int sensor1State = 0;
+int sensor2State = 0;
+int sensor3State = 0;
+int sensor4State = 0;
+
+// Initialize the ESP8266 web server
+ESP8266WebServer server(80);
+
+void setup() {
+  Serial.begin(115200);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+
+  // Define sensor pins as input
+  pinMode(sensor1Pin, INPUT);
+  pinMode(sensor2Pin, INPUT);
+  pinMode(sensor3Pin, INPUT);
+  pinMode(sensor4Pin, INPUT);
+
+  // Start the web server
+  server.on("/", handleRoot);
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  // Read sensor states
+  sensor1State = digitalRead(sensor1Pin);
+  sensor2State = digitalRead(sensor2Pin);
+  sensor3State = digitalRead(sensor3Pin);
+  sensor4State = digitalRead(sensor4Pin);
+
+  // Handle client requests
+  server.handleClient();
+}
+
+// Handle root URL request
+void handleRoot() {
+  String message;
+  message += "Parking Spot 1: ";
+  message += (sensor1State == HIGH) ? "Available" : "Occupied";
+  message += "<br>";
+  message += "Parking Spot 2: ";
+  message += (sensor2State == HIGH) ? "Available" : "Occupied";
+  message += "<br>";
+  message += "Parking Spot 3: ";
+  message += (sensor3State == HIGH) ? "Available" : "Occupied";
+  message += "<br>";
+  message += "Parking Spot 4: ";
+  message += (sensor4State == HIGH) ? "Available" : "Occupied";
+  message += "<br>";
+
+  // Send HTTP response
+  server.send(200, "text/html", message);
+}
